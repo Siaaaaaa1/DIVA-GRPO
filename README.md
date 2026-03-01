@@ -1,94 +1,94 @@
-# DIVA-GRPO: Enhancing Multimodal Reasoning Through Difficulty-Adaptive Variant Advantage
+# DIVA-GRPO: Enhancing Multimodal Reasoning through Difficulty-Adaptive Variant Advantage
 
-<div align="center">
+[![ICLR 2026](https://img.shields.io/badge/ICLR-2026-blue.svg)](https://openreview.net/forum?id=qKXYEg00eH&referrer=%5BAuthor%20Console%5D(%2Fgroup%3Fid%3DICLR.)cc%2F2026%2FConference%2FAuthors%23your-submissions) 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
 
-[![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-green.svg)](https://www.python.org/)  [![PyTorch](https://img.shields.io/badge/PyTorch-2.4.0-orange.svg)](https://pytorch.org/)
+This is the official repository for the ICLR 2026 paper **"DIVA-GRPO: Enhancing Multimodal Reasoning through Difficulty-Adaptive Variant Advantage"**.
 
-<img src="./picture/DIVA.png" width="90%" alt="DIVA-GRPO Framework Overview"/>
+DIVA-GRPO is a reinforcement learning framework based on Group Relative Policy Optimization (GRPO) specifically designed for Multimodal Large Language Models (MLLMs). It dynamically assesses problem difficulty, generates tailored variants, and computes local/global advantages with reward-range-based rescaling to mitigate reward sparsity and advantage vanishing.
 
-*Figure: Overview of the DIVA-GRPO framework showing difficulty-adaptive question expansion and policy optimization. The method dynamically assesses problem difficulty and generates semantically consistent variants to maintain stable reward variance throughout training.*
-</div>
+![DIVA-GRPO Pipeline](picture/DIVA.png)
 
-## 🎯 Overview
-
-DIVA-GRPO is a novel reinforcement learning framework that addresses fundamental limitations of Group Relative Policy Optimization (GRPO) in multimodal large language models (MLLMs). While GRPO enables efficient long-chain reasoning without a critic model, it suffers from **reward sparsity** (scarcity of positive feedback on difficult problems) and **advantage vanishing** (consistent rewards in overly easy/hard groups produce zero gradients).
-
-Our difficulty-adaptive approach achieves:
-- **State-of-the-art** performance among 7B models across 6 multimodal reasoning benchmarks
-- **2.55× speedup** in training steps and **1.76× end-to-end speedup** in wall-clock time
-- **8.23 point average improvement** over Qwen2.5-VL-7B baseline
-
-### Core Innovations
-
-1. **Dynamic Difficulty Assessment**: Continuously evaluates problem difficulty based on model rollout accuracy, adapting throughout training
-2. **Adaptive Variant Generation**: Creates semantically consistent variants tailored to difficulty levels:
-   - **Easy problems**: Add text/image perturbations to increase challenge
-   - **Moderate problems**: Generate equivalent textual reformulations
-   - **Hard problems**: Inject step-by-step reasoning hints to enable learning
-3. **Difficulty-Weighted Scaling**: Dynamically reweights advantages to amplify signals from harder variants while stabilizing updates from easier ones
-4. **Reward-Range-Based (RRB) Rescaling**: Prevents advantage inflation from minor reward differences, ensuring reliable optimization signals
-
-Built upon the efficient [EasyR1](https://github.com/hiyouga/EasyR1) framework, DIVA-GRPO is broadly applicable to any GRPO-based training pipeline.
+## 🚀 Key Features
+- **Dynamic Difficulty Assessment**: Adaptively estimates problem difficulty based on model capabilities.
+- **Difficulty-Adaptive Variant Generation**: Generates text, image, and hint variants to maintain an optimal difficulty distribution.
+- **RRB-Rescaling**: Reward-Range-Based Advantage Rescaling to stabilize training signals.
+- **High Efficiency**: Achieves State-of-the-Art performance on 7B models with significant end-to-end training speedup.
 
 ---
 
-## ⚡ Quick Start
+## 🛠️ Installation
 
-### 1. Installation
+1. Create a conda environment and activate it:
+```bash
+conda create -n diva python=3.10
+conda activate diva
 
-We recommend using a Conda environment. Tested on Python 3.9+ and PyTorch 2.4.0.
+```
+
+2. Install dependencies (Requires CUDA and PyTorch):
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/DIVA-GRPO.git
-cd DIVA-GRPO
-
-# Create and activate environment
-conda create -n diva_grpo python=3.9 -y
-conda activate diva_grpo
-
-# Install PyTorch (adjust for your CUDA version)
-pip install torch==2.4.0 --index-url https://download.pytorch.org/whl/cu121
-
-# Install package in editable mode
+pip install -r requirements.txt
+# Install the framework in editable mode
 pip install -e .
 
-# Install Flash Attention for efficiency
-pip install flash-attn --no-build-isolation
 ```
 
-### 2. Data Preparation
+---
 
-DIVA-GRPO requires datasets formatted with support for difficulty-aware variants. Use our provided augmentation script to generate variants offline using an external model (GPT-4o, Qwen-Max, etc.).
+## 📊 Dataset Preparation & Augmentation
+
+Our training relies on dynamically augmented datasets with difficulty variants and reasoning "think steps". We use the [R1-ShareVL-52K](https://huggingface.co/datasets/HuanjinYao/R1-ShareVL-52K) dataset as our base.
+
+### 1. Download Base Dataset
+
+Download the base dataset from Hugging Face and save it locally as a Parquet file (e.g., `data/r1_sharevl_52k.parquet`).
+
+### 2. Generate Variants and Think Steps
+
+We provide a high-performance, multiprocessing script to call Azure OpenAI (or other LLMs) to generate the variants and reasoning steps.
+
+First, export your API credentials:
 
 ```bash
-# Generate difficulty-aware variants
+export AZURE_OPENAI_KEY="your_api_key_here"
+export AZURE_OPENAI_ENDPOINT="your_endpoint_here"
+
+```
+
+Next, run the augmentation script. You can adjust the `--workers` argument based on your API rate limits:
+
+```bash
 python verl/difficulty_variation/augment_dataset.py \
-    --dataset_path data/your_original_dataset \
-    --output_path data/your_augmented_dataset \
+    --input data/r1_sharevl_52k.parquet \
+    --output data/r1_sharevl_52k_augmented.parquet \
+    --workers 8
+
 ```
 
-### 3. Training
+*Note: This script (`augment_dataset.py`) utilizes a listener-worker architecture with IPC queues to ensure thread-safe, incremental saving of generated data to a single Parquet file.*
 
-Launch training with our reproducible scripts:
+---
+
+## 🏃‍♂️ Training
+
+We provide example scripts to launch the training process using Ray and vLLM. To train Qwen2.5-VL-7B with the DIVA-GRPO algorithm, please update the paths in the script and run:
 
 ```bash
-# Train DIVA-GRPO on Qwen2.5-VL-7B
-# Includes: Z-score normalization, difficulty weighting (k=0.1), RRB rescaling
-bash ./examples/main_exp/ZSCORENORM_WAN_RRBLOCAL_RRBGLOBAL_5000_k=0.1.sh
+bash examples/main_exp/ZSCORENORM_WAN_RRBLOCAL_RRBGLOBAL_5000_k=0.1.sh
+
 ```
 
+### Key Hyperparameters
+
+* `k=0.1`: The sensitivity parameter for difficulty-weighted scaling.
+* `Z-Score Norm`: Applies batch-level z-score normalization separately to local and global advantages.
+* `RRB-Rescaling`: Reward-Range-Based Rescaling prevents inflated advantages from minor reward differences.
+
 ---
 
-### Ethical Considerations
+## 🤝 Acknowledgments
 
-This research adheres to ethical AI principles. All data used is publicly available and does not contain sensitive personal information. The framework is designed to improve model reasoning capabilities while maintaining transparency and reproducibility.
-
----
-
-## 🔗 Links
-
-- [Project Page](https://anonymous-research.github.io/DIVA-GRPO)
-- [Paper (arXiv)](https://arxiv.org/abs/2501.00000)
-- [EasyR1 Framework](https://github.com/hiyouga/EasyR1)
-- [VLMEvalKit](https://github.com/open-compass/VLMEvalKit) for evaluation
+This project is built upon the excellent open-source [verl](https://github.com/volcengine/verl) framework. We express our gratitude to the authors for their foundational work.
