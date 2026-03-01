@@ -10,11 +10,21 @@ DIVA-GRPO is a reinforcement learning framework based on Group Relative Policy O
 
 ![DIVA-GRPO Pipeline](picture/DIVA.png)
 
-## 🚀 Key Features
-- **Dynamic Difficulty Assessment**: Adaptively estimates problem difficulty based on model capabilities.
-- **Difficulty-Adaptive Variant Generation**: Generates text, image, and hint variants to maintain an optimal difficulty distribution.
-- **RRB-Rescaling**: Reward-Range-Based Advantage Rescaling to stabilize training signals.
-- **High Efficiency**: Achieves State-of-the-Art performance on 7B models with significant end-to-end training speedup.
+## ✨ Main Contributions
+Our paper introduces several key innovations to solve reward sparsity and advantage vanishing in MLLM reinforcement learning:
+- **Difficulty-Adaptive Variant Generation:** We propose a dynamic difficulty assessment mechanism that adaptively samples semantically consistent variants (text, image, and reasoning hints) to ensure stable reward variance regardless of problem difficulty.
+- **Joint Local-Global Advantage Estimation:** We introduce a two-step balancing strategy utilizing batch z-score normalization and difficulty-weighted scaling to prevent global advantages from dominating optimization.
+- **RRB-Rescaling (Reward-Range-Based Rescaling):** A novel technique that scales advantages based on actual reward variability, effectively preventing unreasonable advantage inflation and accelerating convergence.
+- **Exceptional Efficiency & Performance:** Evaluated on Qwen2.5-VL-7B, our method achieves State-of-the-Art (SOTA) performance across 6 mainstream multimodal reasoning benchmarks. It reduces required training steps by over **2.55x** and delivers a **1.76x** end-to-end speedup in wall-clock time.
+
+## 🏆 Supported Benchmarks
+The model has been extensively evaluated and achieves strong performance on the following multimodal mathematical and scientific benchmarks:
+- **MathVista**
+- **MathVerse**
+- **MathVision**
+- **OlympiadBench**
+- **WeMath**
+- **MMK12-test**
 
 ---
 
@@ -48,7 +58,7 @@ Download the base dataset from Hugging Face and save it locally as a Parquet fil
 
 ### 2. Generate Variants and Think Steps
 
-We provide a high-performance, multiprocessing script to call Azure OpenAI (or other LLMs) to generate the variants and reasoning steps.
+We provide a high-performance, multiprocessing script to call Azure OpenAI (or other LLMs like GPT-o3 or Qwen-Plus) to generate the variants and reasoning steps.
 
 First, export your API credentials:
 
@@ -74,18 +84,18 @@ python verl/difficulty_variation/augment_dataset.py \
 
 ## 🏃‍♂️ Training
 
-We provide example scripts to launch the training process using Ray and vLLM. To train Qwen2.5-VL-7B with the DIVA-GRPO algorithm, please update the paths in the script and run:
+We provide example scripts to launch the training process using Ray and vLLM. To train **Qwen2.5-VL-7B-Instruct** with the DIVA-GRPO algorithm, please update the paths in the script and run:
 
 ```bash
 bash examples/main_exp/ZSCORENORM_WAN_RRBLOCAL_RRBGLOBAL_5000_k=0.1.sh
 
 ```
 
-### Key Hyperparameters
+### Key Hyperparameters Configuration
 
-* `k=0.1`: The sensitivity parameter for difficulty-weighted scaling.
-* `Z-Score Norm`: Applies batch-level z-score normalization separately to local and global advantages.
-* `RRB-Rescaling`: Reward-Range-Based Rescaling prevents inflated advantages from minor reward differences.
+* `trainer.weighted_advantage_k=0.1`: The sensitivity parameter for difficulty-weighted scaling (Found to be optimal in ablations).
+* `Z-Score Norm`: Applies batch-level z-score normalization separately to local and global advantages (`ZSCORENORM_WAN`).
+* `RRB-Rescaling`: Reward-Range-Based Rescaling prevents inflated advantages from minor reward differences (`RRBLOCAL_RRBGLOBAL`).
 
 ---
 

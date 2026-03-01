@@ -56,7 +56,7 @@ python3 -m verl.trainer.main \
     trainer.Variant_Num=1 \
     trainer.Dataset_Mode=None \
     trainer.Save_Data=false \
-    algorithm.weight_mode="${SCRIPT_NAME}$" \
+    algorithm.weight_mode="${SCRIPT_NAME}" \
     trainer.score_ranges='[[0.0,0.05],[0.05,0.3],[0.3,0.5],[0.5,0.7],[0.7,1.0]]' \
     trainer.difficulty_changes='[2,1,0,-1,-2]' \
     trainer.weighted_advantage_k=0.1 \
