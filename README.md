@@ -1,4 +1,4 @@
-# DIVA-GRPO: Enhancing Multimodal Reasoning through Difficulty-Adaptive Variant Advantage
+# [ICLR 2026] DIVA-GRPO: Enhancing Multimodal Reasoning through Difficulty-Adaptive Variant Advantage
 
 [![ICLR 2026](https://img.shields.io/badge/ICLR-2026-blue.svg)](https://openreview.net/forum?id=qKXYEg00eH&referrer=%5BAuthor%20Console%5D(%2Fgroup%3Fid%3DICLR.)cc%2F2026%2FConference%2FAuthors%23your-submissions) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
